@@ -381,9 +381,8 @@ video_service/
 
 ### Для Windows
 
-1. Установите Python 3.8+ с [python.org](https://www.python.org/downloads/)
+1. Установите Python 3.8+ 
 2. Установите FFmpeg:
-   - Скачайте с [ffmpeg.org](https://ffmpeg.org/download.html)
    - Добавьте в PATH
    - Проверьте: `ffmpeg -version` в командной строке
 3. Установите зависимости:
@@ -402,3 +401,118 @@ video_service/
 - Требует FFmpeg (обязательно в PATH)
 - Работает на Windows и Linux (Ubuntu/Debian). Для ускорения видеообработки NVENC поддерживается только при наличии совместимой видеокарты и драйверов NVIDIA
 - Максимум 50 копий на файл (ограничение UI)
+
+## Развертывание на сервере (Docker, Ubuntu)
+
+- Образ в Docker Hub: `yourname/videosvc:latest` (замените на ваш)
+- Фиксированные папки (на сервере → внутри контейнера):
+  - `/opt/video_service_data/input` → `/data/input` (исходники)
+  - `/opt/video_service_data/output` → `/data/output` (результат)
+  - `/opt/video_service/media` → `/app/media` (логи/задачи)
+
+Шаги на сервере:
+
+```bash
+# 1) Подготовка директорий
+sudo mkdir -p /opt/video_service
+sudo mkdir -p /opt/video_service_data/{input,output}
+sudo mkdir -p /opt/video_service/media
+
+# 2) .env (секреты и настройки)
+sudo tee /opt/video_service/.env >/dev/null <<'EOF'
+DJANGO_SECRET_KEY=<<СЕКРЕТ_БЕЗ_СКОБОК>>
+DJANGO_DEBUG=False
+DJANGO_ALLOWED_HOSTS=77.239.108.88,localhost,127.0.0.1
+TZ=Europe/Moscow
+EOF
+
+# 3) docker-compose.prod.yml (замените yourname на ваш репозиторий)
+sudo tee /opt/video_service/docker-compose.prod.yml >/dev/null <<'YAML'
+services:
+  videosvc:
+    image: yourname/videosvc:latest
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file: .env
+    command: ["python","-m","gunicorn","-w","3","-b","0.0.0.0:8000","videosvc.wsgi:application"]
+    volumes:
+      - /opt/video_service_data/input:/data/input:ro
+      - /opt/video_service_data/output:/data/output
+      - /opt/video_service/media:/app/media
+YAML
+
+# 4) Запуск
+cd /opt/video_service
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
+```
+
+Доступ: `http://77.239.108.88:8000`
+
+- В форме указывайте:
+  - `input_folder`: `/data/input`
+  - `output_folder`: `/data/output`
+  - `badge_path` (опционально): `/data/pag/logo.png`
+
+### Загрузка и выгрузка видео (сервер)
+
+- Куда класть исходники: `/opt/video_service_data/input`
+- Откуда забирать результат: `/opt/video_service_data/output`
+
+Из Windows (PowerShell, OpenSSH):
+```powershell
+# один файл
+scp "C:\\Path\\to\\video.mp4" root@77.239.108.88:/opt/video_service_data/input/
+# папка
+scp -r "C:\\Path\\to\\videos\\*" root@77.239.108.88:/opt/video_service_data/input/
+```
+
+Из Linux/macOS:
+```bash
+scp /path/video.mp4 root@77.239.108.88:/opt/video_service_data/input/
+scp -r /path/videos/* root@77.239.108.88:/opt/video_service_data/input/
+```
+
+Забрать результаты (Windows):
+```powershell
+scp -r root@77.239.108.88:/opt/video_service_data/output/* "C:\\Users\\Aorus\\Downloads\\rendered\\"
+```
+
+Забрать результаты (Linux/macOS):
+```bash
+scp -r root@77.239.108.88:/opt/video_service_data/output/* ~/Downloads/rendered/
+```
+
+Проверка на сервере:
+```bash
+ls -la /opt/video_service_data/input | head
+ls -la /opt/video_service_data/output | head
+# внутри контейнера
+docker compose -f /opt/video_service/docker-compose.prod.yml exec videosvc ls -la /data/input | head
+```
+
+### Логи задач
+
+- Файлы логов: `/opt/video_service/media/jobs/<job_id>/job.log`
+
+```bash
+# последние 50 строк
+tail -n 50 /opt/video_service/media/jobs/<job_id>/job.log
+```
+
+### Обновление сервиса (образ из Docker Hub)
+
+```bash
+cd /opt/video_service
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml ps
+```
+
+### Автозапуск и фаервол
+
+```bash
+sudo systemctl enable --now docker
+sudo ufw allow 8000/tcp
+```
