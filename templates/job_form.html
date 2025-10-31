@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% block title %}Новая задача{% endblock %}
+{% block content %}
+<form method="post" class="section">
+  {% csrf_token %}
+  <div class="row">
+    <div>
+      <h3>Папки и формат</h3>
+      <label>{{ form.job_name.label }}</label>
+      {{ form.job_name }}
+      <p class="muted" style="font-size: 12px; color: #666;">{{ form.job_name.help_text }}</p>
+      
+      <label>{{ form.input_folder.label }}</label>
+      {{ form.input_folder }}
+      <label>{{ form.output_folder.label }}</label>
+      {{ form.output_folder }}
+      <label>{{ form.fmt.label }}</label>
+      {{ form.fmt }}
+      <label>{{ form.copies.label }}</label>
+      {{ form.copies }}
+    </div>
+    <div>
+      <h3>Текст</h3>
+      <label>{{ form.text_enabled }} {{ form.text_enabled.label }}</label>
+      <label>{{ form.text_content.label }}</label>
+      {{ form.text_content }}
+      <label>{{ form.text_fontfile.label }}</label>
+      {{ form.text_fontfile }}
+      <label>{{ form.text_auto }} {{ form.text_auto.label }}</label>
+      <label>{{ form.text_level.label }}</label>
+      {{ form.text_level }}
+      <label>{{ form.text_fontsize.label }}</label>
+      {{ form.text_fontsize }}
+      <label>{{ form.text_position.label }}</label>
+      {{ form.text_position }}
+    </div>
+  </div>
+
+  <div class="row">
+    <div>
+      <h3>Бейдж</h3>
+      <label>{{ form.badge_enabled }} {{ form.badge_enabled.label }}</label>
+      <label>{{ form.badge_path.label }}</label>
+      {{ form.badge_path }}
+      <label>{{ form.badge_random_scale }} {{ form.badge_random_scale.label }}</label>
+      <label>{{ form.badge_scale_percent.label }}</label>
+      {{ form.badge_scale_percent }}
+      <label>{{ form.badge_position.label }}</label>
+      {{ form.badge_position }}
+      <label>{{ form.badge_behavior.label }}</label>
+      {{ form.badge_behavior }}
+    </div>
+    <div>
+      <h3>Опции и эффекты</h3>
+      <label>{{ form.safe_mode }} {{ form.safe_mode.label }}</label>
+      <label>{{ form.profile_strong }} {{ form.profile_strong.label }}</label>
+      <label>{{ form.cut }} {{ form.cut.label }}</label>
+      <label>{{ form.contrast }} {{ form.contrast.label }}</label>
+      <label>{{ form.color_shift }} {{ form.color_shift.label }}</label>
+      <label>{{ form.noise }} {{ form.noise.label }}</label>
+      <label>{{ form.brightness_sat }} {{ form.brightness_sat.label }}</label>
+      <label>{{ form.crop_edges }} {{ form.crop_edges.label }}</label>
+      <label>{{ form.geom }} {{ form.geom.label }}</label>
+      <label>{{ form.time_mod }} {{ form.time_mod.label }}</label>
+      <label>{{ form.overlays }} {{ form.overlays.label }}</label>
+      <label>{{ form.codec_random }} {{ form.codec_random.label }}</label>
+      <label>{{ form.color_mod }} {{ form.color_mod.label }}</label>
+      <label>{{ form.hidden_pattern }} {{ form.hidden_pattern.label }}</label>
+      <label>{{ form.fixed_duration_enabled }} {{ form.fixed_duration_enabled.label }}</label>
+      <label>{{ form.fixed_duration.label }}</label>
+      {{ form.fixed_duration }}
+    </div>
+  </div>
+
+  <div style="margin-top: 20px; margin-bottom: 20px;">
+    <button type="button" id="mass-process-btn" name="action" value="batch">Создать пакетную задачу</button>
+    <span style="color: #b31b1b; font-weight: bold; font-size: 15px; letter-spacing:1px; margin-left:28px; display:block; margin-bottom:1px;">ОБЯЗАТЕЛЬНО!</span>
+    <button type="submit" name="action" value="test" style="margin-left: 10px;">Тест одного видео</button>
+  </div>
+
+<!-- Модальное окно -->
+<div id="massConfirmModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(33,33,33,0.58);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;padding:28px 32px 22px 32px;box-shadow:0 6px 28px #333;width:420px;max-width:97vw;border-radius:10px;text-align:center;">
+    <div style="font-size:18px;margin-bottom:17px;">Вы уверены, что хотите обработать <span id="video-count-placeholder"></span> видео?<br>Убедитесь, что тестирование на одном ролике выдаёт корректный результат.</div>
+    <button type="button" id="confirm-mass-yes" style="background:#2a5;font-size:15px;padding:7px 18px;margin-right:10px;">Продолжить</button>
+    <button type="button" id="confirm-mass-no" style="background:#fa5;font-size:15px;padding:7px 18px;">Назад</button>
+  </div>
+</div>
+<script>
+  // Предполагается, что input_folder и copies выборки уже на форме
+  document.getElementById('mass-process-btn').onclick = function(e) {
+    e.preventDefault();
+    var folder = document.querySelector('[name="input_folder"]').value;
+    var placeholder = document.getElementById('video-count-placeholder');
+    placeholder.innerText = '…';
+    document.getElementById('massConfirmModal').style.display = 'flex';
+    if (!folder) { placeholder.innerText = '0'; return; }
+    fetch('/api/count_videos?input=' + encodeURIComponent(folder))
+      .then(function(r){ return r.json(); })
+      .then(function(j){ placeholder.innerText = (j && typeof j.count === 'number') ? j.count : '?'; })
+      .catch(function(){ placeholder.innerText = '?'; });
+  };
+  document.getElementById('confirm-mass-yes').onclick = function() {
+    // Сабмитим форму
+    var frm = document.querySelector('form.section');
+    var fakeBtn = document.createElement('button');
+    fakeBtn.type = 'submit';
+    fakeBtn.name = 'action';
+    fakeBtn.value = 'batch';
+    fakeBtn.style.display = 'none';
+    frm.appendChild(fakeBtn);
+    document.getElementById('massConfirmModal').style.display = 'none';
+    fakeBtn.click();
+  };
+  document.getElementById('confirm-mass-no').onclick = function() {
+    document.getElementById('massConfirmModal').style.display = 'none';
+  };
+</script>
+</form>
+
+<div class="section">
+  <h3>Последние задачи</h3>
+  <table>
+    <thead><tr><th>ID</th><th>Имя</th><th>Статус</th><th>Прогресс</th><th>Исходных файлов</th><th>Готово файлов</th><th>Создана</th><th></th></tr></thead>
+    <tbody>
+      {% for j in jobs %}
+      <tr>
+        <td>{{ j.id }}</td>
+        <td>{{ j.name }}</td>
+        <td>{{ j.status }}</td>
+        <td>{{ j.progress_overall }}% ({{ j.done_tasks }}/{{ j.total_tasks }})</td>
+        <td>{{ j.src_files_total|default:"-" }}</td>
+        <td>{{ j.done_tasks|default:"-" }}</td>
+        <td>{{ j.created_at }}</td>
+        <td><a href="{% url 'job_detail' j.id %}">Открыть</a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8">Нет задач</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p><a href="/">Обновить</a></p>
+  </div>
+{% endblock %}

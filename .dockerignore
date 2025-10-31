@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+venv/
+.env
+.idea/
+.vscode/
+videos_outputs/
+media/jobs/
+media/*/job.json.tmp
+

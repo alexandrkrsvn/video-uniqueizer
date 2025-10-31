@@ -1,0 +1,15 @@
+services:
+  videosvc:
+    build: .
+    image: videosvc:dev
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file: .env
+    volumes:
+      - ./:/app:rw
+      - ./media:/app/media
+      - "C:/Users/Aorus/Desktop/uniqualize:/data"
+    
+
+
