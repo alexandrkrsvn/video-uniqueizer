@@ -9,7 +9,7 @@ services:
     volumes:
       - ./:/app:rw
       - ./media:/app/media
-      - "C:/Users/Aorus/Desktop/uniqualize:/data"
+      - "C:/pass/data"
     
 
 
