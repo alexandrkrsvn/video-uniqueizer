@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}Видео Уникализатор{% endblock %}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        label { display: block; margin-top: 8px; }
+        input[type=text], input[type=number], select { width: 100%; padding: 6px; }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .section { border: 1px solid #ddd; padding: 12px; border-radius: 6px; margin-bottom: 16px; }
+        .muted { color: #666; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 6px; border-bottom: 1px solid #eee; text-align: left; }
+    </style>
+    {% block head %}{% endblock %}
+    {% block refresh %}{% endblock %}
+</head>
+<body>
+<div class="container">
+    <h1>Видео Уникализатор</h1>
+    {% block content %}{% endblock %}
+</div>
+</body>
+</html>
+
+

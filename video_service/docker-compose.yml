@@ -1,0 +1,14 @@
+services:
+  videosvc:
+    build: .
+    image: videosvc:latest
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file: .env
+    volumes:
+      - ./:/app:rw
+      - ./media:/app/media
+      - ./videos_outputs:/app/videos_outputs
+
+
