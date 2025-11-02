@@ -10,10 +10,29 @@
       {{ form.job_name }}
       <p class="muted" style="font-size: 12px; color: #666;">{{ form.job_name.help_text }}</p>
       
-      <label>{{ form.input_folder.label }}</label>
-      {{ form.input_folder }}
-      <label>{{ form.output_folder.label }}</label>
-      {{ form.output_folder }}
+      <label>{{ form.use_yadisk }} {{ form.use_yadisk.label }}</label>
+      <p class="muted" style="font-size: 12px; color: #666;">Используйте Яндекс Диск для загрузки и выгрузки видео</p>
+      
+      <div id="local-paths" style="display: none;">
+        <label>{{ form.input_folder.label }}</label>
+        {{ form.input_folder }}
+        <label>{{ form.output_folder.label }}</label>
+        {{ form.output_folder }}
+      </div>
+      
+      <div id="yadisk-paths" style="display: none;">
+        <label>{{ form.input_yadisk_path.label }}</label>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          {{ form.input_yadisk_path }}
+          <button type="button" id="browse-input-yadisk" style="padding: 5px 10px;">Выбрать папку</button>
+        </div>
+        <label>{{ form.output_yadisk_path.label }}</label>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          {{ form.output_yadisk_path }}
+          <button type="button" id="browse-output-yadisk" style="padding: 5px 10px;">Выбрать папку</button>
+        </div>
+      </div>
+      
       <label>{{ form.fmt.label }}</label>
       {{ form.fmt }}
       <label>{{ form.copies.label }}</label>
@@ -24,8 +43,20 @@
       <label>{{ form.text_enabled }} {{ form.text_enabled.label }}</label>
       <label>{{ form.text_content.label }}</label>
       {{ form.text_content }}
-      <label>{{ form.text_fontfile.label }}</label>
-      {{ form.text_fontfile }}
+      
+      <label>{{ form.text_font_from_yadisk }} {{ form.text_font_from_yadisk.label }}</label>
+      <div id="text-font-local" style="display: block;">
+        <label>{{ form.text_fontfile.label }}</label>
+        {{ form.text_fontfile }}
+      </div>
+      <div id="text-font-yadisk" style="display: none;">
+        <label>{{ form.text_fontfile_yadisk.label }}</label>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          {{ form.text_fontfile_yadisk }}
+          <button type="button" id="browse-font-yadisk" style="padding: 5px 10px;">Выбрать файл</button>
+        </div>
+      </div>
+      
       <label>{{ form.text_auto }} {{ form.text_auto.label }}</label>
       <label>{{ form.text_level.label }}</label>
       {{ form.text_level }}
@@ -40,8 +71,20 @@
     <div>
       <h3>Бейдж</h3>
       <label>{{ form.badge_enabled }} {{ form.badge_enabled.label }}</label>
-      <label>{{ form.badge_path.label }}</label>
-      {{ form.badge_path }}
+      
+      <label>{{ form.badge_from_yadisk }} {{ form.badge_from_yadisk.label }}</label>
+      <div id="badge-local" style="display: block;">
+        <label>{{ form.badge_path.label }}</label>
+        {{ form.badge_path }}
+      </div>
+      <div id="badge-yadisk" style="display: none;">
+        <label>{{ form.badge_path_yadisk.label }}</label>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          {{ form.badge_path_yadisk }}
+          <button type="button" id="browse-badge-yadisk" style="padding: 5px 10px;">Выбрать файл</button>
+        </div>
+      </div>
+      
       <label>{{ form.badge_random_scale }} {{ form.badge_random_scale.label }}</label>
       <label>{{ form.badge_scale_percent.label }}</label>
       {{ form.badge_scale_percent }}
@@ -78,7 +121,7 @@
     <button type="submit" name="action" value="test" style="margin-left: 10px;">Тест одного видео</button>
   </div>
 
-<!-- Модальное окно -->
+<!-- Модальное окно подтверждения -->
 <div id="massConfirmModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(33,33,33,0.58);z-index:1000;align-items:center;justify-content:center;">
   <div style="background:#fff;padding:28px 32px 22px 32px;box-shadow:0 6px 28px #333;width:420px;max-width:97vw;border-radius:10px;text-align:center;">
     <div style="font-size:18px;margin-bottom:17px;">Вы уверены, что хотите обработать <span id="video-count-placeholder"></span> видео?<br>Убедитесь, что тестирование на одном ролике выдаёт корректный результат.</div>
@@ -86,35 +129,324 @@
     <button type="button" id="confirm-mass-no" style="background:#fa5;font-size:15px;padding:7px 18px;">Назад</button>
   </div>
 </div>
+
+<!-- Модальное окно браузера Яндекс Диска (для папок) -->
+<div id="yadiskBrowserModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(33,33,33,0.58);z-index:1001;align-items:center;justify-content:center;">
+  <div style="background:#fff;padding:28px 32px 22px 32px;box-shadow:0 6px 28px #333;width:600px;max-width:97vw;max-height:80vh;border-radius:10px;">
+    <h3 style="margin-top:0;" id="yadisk-browser-title">Выберите папку на Яндекс Диске</h3>
+    <div id="yadisk-current-path" style="margin-bottom:10px;padding:10px;background:#f5f5f5;border-radius:5px;">
+      <strong>Текущая папка:</strong> <span id="yadisk-path-display">/</span>
+    </div>
+    <div id="yadisk-folder-list" style="max-height:400px;overflow-y:auto;border:1px solid #ddd;border-radius:5px;padding:10px;">
+      <div style="text-align:center;padding:20px;">Загрузка...</div>
+    </div>
+    <div style="margin-top:15px;display:flex;gap:10px;justify-content:flex-end;">
+      <button type="button" id="yadisk-select-item" style="background:#2a5;font-size:15px;padding:7px 18px;">Выбрать</button>
+      <button type="button" id="yadisk-browser-cancel" style="background:#fa5;font-size:15px;padding:7px 18px;">Отмена</button>
+    </div>
+  </div>
+</div>
+
 <script>
-  // Предполагается, что input_folder и copies выборки уже на форме
-  document.getElementById('mass-process-btn').onclick = function(e) {
-    e.preventDefault();
-    var folder = document.querySelector('[name="input_folder"]').value;
-    var placeholder = document.getElementById('video-count-placeholder');
-    placeholder.innerText = '…';
-    document.getElementById('massConfirmModal').style.display = 'flex';
-    if (!folder) { placeholder.innerText = '0'; return; }
-    fetch('/api/count_videos?input=' + encodeURIComponent(folder))
-      .then(function(r){ return r.json(); })
-      .then(function(j){ placeholder.innerText = (j && typeof j.count === 'number') ? j.count : '?'; })
-      .catch(function(){ placeholder.innerText = '?'; });
-  };
-  document.getElementById('confirm-mass-yes').onclick = function() {
-    // Сабмитим форму
-    var frm = document.querySelector('form.section');
-    var fakeBtn = document.createElement('button');
-    fakeBtn.type = 'submit';
-    fakeBtn.name = 'action';
-    fakeBtn.value = 'batch';
-    fakeBtn.style.display = 'none';
-    frm.appendChild(fakeBtn);
-    document.getElementById('massConfirmModal').style.display = 'none';
-    fakeBtn.click();
-  };
-  document.getElementById('confirm-mass-no').onclick = function() {
-    document.getElementById('massConfirmModal').style.display = 'none';
-  };
+  (function() {
+    var useYadiskCheckbox = document.querySelector('[name="use_yadisk"]');
+    var localPathsDiv = document.getElementById('local-paths');
+    var yadiskPathsDiv = document.getElementById('yadisk-paths');
+    var yadiskConnected = false;
+    var currentBrowserTarget = null; // 'input', 'output', 'font', 'badge'
+    var currentBrowserPath = '/';
+    var currentBrowserMode = 'folder'; // 'folder' or 'file'
+    
+    // Переключение между локальными и Яндекс Диск путями
+    function togglePaths() {
+      if (useYadiskCheckbox.checked) {
+        localPathsDiv.style.display = 'none';
+        yadiskPathsDiv.style.display = 'block';
+        checkYadiskConnection();
+      } else {
+        localPathsDiv.style.display = 'block';
+        yadiskPathsDiv.style.display = 'none';
+      }
+    }
+    
+    useYadiskCheckbox.addEventListener('change', togglePaths);
+    togglePaths(); // Инициализация при загрузке
+    
+    // Переключение для шрифта
+    var textFontFromYadisk = document.querySelector('[name="text_font_from_yadisk"]');
+    var textFontLocalDiv = document.getElementById('text-font-local');
+    var textFontYadiskDiv = document.getElementById('text-font-yadisk');
+    
+    function toggleTextFont() {
+      if (textFontFromYadisk && textFontFromYadisk.checked) {
+        textFontLocalDiv.style.display = 'none';
+        textFontYadiskDiv.style.display = 'block';
+      } else {
+        textFontLocalDiv.style.display = 'block';
+        textFontYadiskDiv.style.display = 'none';
+      }
+    }
+    
+    if (textFontFromYadisk) {
+      textFontFromYadisk.addEventListener('change', toggleTextFont);
+      toggleTextFont();
+    }
+    
+    // Переключение для бейджа
+    var badgeFromYadisk = document.querySelector('[name="badge_from_yadisk"]');
+    var badgeLocalDiv = document.getElementById('badge-local');
+    var badgeYadiskDiv = document.getElementById('badge-yadisk');
+    
+    function toggleBadge() {
+      if (badgeFromYadisk && badgeFromYadisk.checked) {
+        badgeLocalDiv.style.display = 'none';
+        badgeYadiskDiv.style.display = 'block';
+      } else {
+        badgeLocalDiv.style.display = 'block';
+        badgeYadiskDiv.style.display = 'none';
+      }
+    }
+    
+    if (badgeFromYadisk) {
+      badgeFromYadisk.addEventListener('change', toggleBadge);
+      toggleBadge();
+    }
+    
+    // Проверка подключения к Яндекс Диску
+    function checkYadiskConnection() {
+      fetch('/api/yadisk/check', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      })
+        .then(function(response) {
+          // Проверяем Content-Type
+          var contentType = response.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/json')) {
+            return response.text().then(function(text) {
+              throw new Error('Сервер вернул HTML вместо JSON. Возможно, URL не найден или произошла ошибка. Ответ начинается с: ' + text.substring(0, 100));
+            });
+          }
+          return response.json();
+        })
+        .then(function(j) {
+          yadiskConnected = j.connected;
+          if (!yadiskConnected) {
+            var errorMsg = j.error || 'Неизвестная ошибка';
+            alert('Ошибка подключения к Яндекс Диску:\n' + errorMsg + 
+                  '\n\nПроверьте:\n' +
+                  '1. Токен установлен в переменной окружения YANDEX_DISK_TOKEN или в файле .env\n' +
+                  '2. Токен действителен и не истек\n' +
+                  '3. Сервер перезапущен после установки токена\n' +
+                  '4. Файл .env находится в корне проекта');
+          }
+        })
+        .catch(function(err) {
+          alert('Ошибка проверки подключения к Яндекс Диску:\n' + err.message +
+                '\n\nПроверьте:\n' +
+                '1. Сервер Django запущен\n' +
+                '2. URL доступен: http://localhost:8000/api/yadisk/check\n' +
+                '3. Откройте консоль браузера (F12) для подробностей');
+          console.error('Ошибка проверки Яндекс Диска:', err);
+        });
+    }
+    
+    // Открытие браузера папок/файлов Яндекс Диска
+    function openYadiskBrowser(target, mode) {
+      currentBrowserTarget = target;
+      currentBrowserMode = mode || 'folder';
+      currentBrowserPath = '/';
+      var title = document.getElementById('yadisk-browser-title');
+      if (mode === 'file') {
+        title.textContent = 'Выберите файл на Яндекс Диске';
+      } else {
+        title.textContent = 'Выберите папку на Яндекс Диске';
+      }
+      document.getElementById('yadiskBrowserModal').style.display = 'flex';
+      loadYadiskList('/');
+    }
+    
+    document.getElementById('browse-input-yadisk').onclick = function() {
+      openYadiskBrowser('input', 'folder');
+    };
+    
+    document.getElementById('browse-output-yadisk').onclick = function() {
+      openYadiskBrowser('output', 'folder');
+    };
+    
+    document.getElementById('browse-font-yadisk').onclick = function() {
+      openYadiskBrowser('font', 'file');
+    };
+    
+    document.getElementById('browse-badge-yadisk').onclick = function() {
+      openYadiskBrowser('badge', 'file');
+    };
+    
+    // Загрузка списка папок/файлов на Яндекс Диске
+    function loadYadiskList(path) {
+      var listDiv = document.getElementById('yadisk-folder-list');
+      var pathDisplay = document.getElementById('yadisk-path-display');
+      listDiv.innerHTML = '<div style="text-align:center;padding:20px;">Загрузка...</div>';
+      pathDisplay.textContent = path;
+      currentBrowserPath = path;
+      
+      var url = '/api/yadisk/list?path=' + encodeURIComponent(path);
+      if (currentBrowserMode === 'file') {
+        url += '&type=all'; // Показываем и папки и файлы для выбора файлов
+      } else {
+        url += '&type=dirs'; // Только папки для выбора папок
+      }
+      
+      fetch(url)
+        .then(function(r) { return r.json(); })
+        .then(function(j) {
+          if (j.error) {
+            listDiv.innerHTML = '<div style="color:red;">Ошибка: ' + j.error + '</div>';
+            return;
+          }
+          
+          var items = j.items || [];
+          var html = '<div style="margin-bottom:10px;">';
+          
+          // Кнопка "Назад" если не в корне
+          if (path !== '/') {
+            var parentPath = path.split('/').slice(0, -1).join('/') || '/';
+            html += '<div style="padding:8px;cursor:pointer;background:#e8e8e8;margin-bottom:5px;border-radius:3px;" onclick="loadYadiskList(\'' + parentPath + '\')">📁 .. (наверх)</div>';
+          }
+          
+          // Разделяем папки и файлы
+          var folders = items.filter(function(item) { return item.type === 'dir'; });
+          var files = items.filter(function(item) { return item.type === 'file'; });
+          
+          // Показываем папки
+          folders.forEach(function(item) {
+            html += '<div style="padding:8px;cursor:pointer;background:#f5f5f5;margin-bottom:5px;border-radius:3px;border:1px solid #ddd;" onclick="loadYadiskList(\'' + item.path + '\')">📁 ' + item.name + '</div>';
+          });
+          
+          // Показываем файлы (если режим выбора файлов)
+          if (currentBrowserMode === 'file') {
+            // Фильтруем файлы по расширениям в зависимости от цели
+            var allowedExtensions = [];
+            if (currentBrowserTarget === 'font') {
+              allowedExtensions = ['.ttf', '.otf', '.woff', '.woff2', '.eot'];
+            } else if (currentBrowserTarget === 'badge') {
+              allowedExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.mp4', '.mov'];
+            }
+            
+            var filteredFiles = files;
+            if (allowedExtensions.length > 0) {
+              filteredFiles = files.filter(function(item) {
+                var ext = item.name.substring(item.name.lastIndexOf('.')).toLowerCase();
+                return allowedExtensions.indexOf(ext) !== -1;
+              });
+            }
+            
+            if (filteredFiles.length === 0 && files.length > 0) {
+              html += '<div style="padding:8px;background:#fff3cd;margin-bottom:5px;border-radius:3px;border:1px solid #ffc107;">ℹ️ Нет файлов с подходящим расширением. Показаны все файлы.</div>';
+              filteredFiles = files;
+            }
+            
+            filteredFiles.forEach(function(item) {
+              var icon = '📄';
+              var ext = item.name.substring(item.name.lastIndexOf('.')).toLowerCase();
+              if (['.png', '.jpg', '.jpeg', '.gif', '.webp'].indexOf(ext) !== -1) {
+                icon = '🖼️';
+              } else if (['.mp4', '.mov', '.avi'].indexOf(ext) !== -1) {
+                icon = '🎬';
+              } else if (['.ttf', '.otf', '.woff'].indexOf(ext) !== -1) {
+                icon = '🔤';
+              }
+              html += '<div style="padding:8px;cursor:pointer;background:#e7f3ff;margin-bottom:5px;border-radius:3px;border:1px solid #0066cc;" onclick="selectYadiskFile(\'' + item.path + '\')">' + icon + ' ' + item.name + '</div>';
+            });
+          }
+          
+          if (folders.length === 0 && (currentBrowserMode === 'folder' || (currentBrowserMode === 'file' && files.length === 0))) {
+            html += '<div style="text-align:center;padding:20px;color:#999;">Ничего не найдено</div>';
+          }
+          
+          html += '</div>';
+          listDiv.innerHTML = html;
+        })
+        .catch(function() {
+          listDiv.innerHTML = '<div style="color:red;">Ошибка загрузки списка</div>';
+        });
+    }
+    
+    // Выбор файла
+    function selectYadiskFile(filePath) {
+      currentBrowserPath = filePath;
+      document.getElementById('yadisk-select-item').click();
+    }
+    
+    // Делаем функции глобальными для использования в onclick
+    window.loadYadiskList = loadYadiskList;
+    window.selectYadiskFile = selectYadiskFile;
+    
+    // Выбор папки или файла
+    document.getElementById('yadisk-select-item').onclick = function() {
+      var targetInput;
+      if (currentBrowserTarget === 'input') {
+        targetInput = document.querySelector('[name="input_yadisk_path"]');
+      } else if (currentBrowserTarget === 'output') {
+        targetInput = document.querySelector('[name="output_yadisk_path"]');
+      } else if (currentBrowserTarget === 'font') {
+        targetInput = document.querySelector('[name="text_fontfile_yadisk"]');
+      } else if (currentBrowserTarget === 'badge') {
+        targetInput = document.querySelector('[name="badge_path_yadisk"]');
+      }
+      
+      if (targetInput) {
+        targetInput.value = currentBrowserPath;
+      }
+      document.getElementById('yadiskBrowserModal').style.display = 'none';
+    };
+    
+    document.getElementById('yadisk-browser-cancel').onclick = function() {
+      document.getElementById('yadiskBrowserModal').style.display = 'none';
+    };
+    
+    // Подсчет видео для модального окна подтверждения
+    document.getElementById('mass-process-btn').onclick = function(e) {
+      e.preventDefault();
+      var useYadisk = useYadiskCheckbox.checked;
+      var folder, placeholder = document.getElementById('video-count-placeholder');
+      placeholder.innerText = '…';
+      document.getElementById('massConfirmModal').style.display = 'flex';
+      
+      if (useYadisk) {
+        folder = document.querySelector('[name="input_yadisk_path"]').value;
+        if (!folder) { placeholder.innerText = '0'; return; }
+        fetch('/api/yadisk/count_videos?path=' + encodeURIComponent(folder))
+          .then(function(r){ return r.json(); })
+          .then(function(j){ placeholder.innerText = (j && typeof j.count === 'number') ? j.count : '?'; })
+          .catch(function(){ placeholder.innerText = '?'; });
+      } else {
+        folder = document.querySelector('[name="input_folder"]').value;
+        if (!folder) { placeholder.innerText = '0'; return; }
+        fetch('/api/count_videos?input=' + encodeURIComponent(folder))
+          .then(function(r){ return r.json(); })
+          .then(function(j){ placeholder.innerText = (j && typeof j.count === 'number') ? j.count : '?'; })
+          .catch(function(){ placeholder.innerText = '?'; });
+      }
+    };
+    
+    document.getElementById('confirm-mass-yes').onclick = function() {
+      var frm = document.querySelector('form.section');
+      var fakeBtn = document.createElement('button');
+      fakeBtn.type = 'submit';
+      fakeBtn.name = 'action';
+      fakeBtn.value = 'batch';
+      fakeBtn.style.display = 'none';
+      frm.appendChild(fakeBtn);
+      document.getElementById('massConfirmModal').style.display = 'none';
+      fakeBtn.click();
+    };
+    
+    document.getElementById('confirm-mass-no').onclick = function() {
+      document.getElementById('massConfirmModal').style.display = 'none';
+    };
+  })();
 </script>
 </form>
 

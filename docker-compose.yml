@@ -9,7 +9,8 @@ services:
     volumes:
       - ./:/app:rw
       - ./media:/app/media
-      - "C:/Users/Aorus/Desktop/uniqualize:/data"
+      # Раскомментируйте и укажите путь к вашим данным на хосте
+      # - /path/to/your/data:/data:ro
     
 
 

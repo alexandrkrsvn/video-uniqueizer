@@ -18,7 +18,8 @@ COPY . /app
 
 EXPOSE 8000
 
-# Dev-friendly default for local Windows testing
+# Dev-friendly default command (для разработки используйте docker-compose override)
+# Для продакшена используйте gunicorn (см. docker-compose.prod.yml)
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
 

@@ -1,0 +1,5 @@
+DJANGO_SECRET_KEY=t2vyvur_=your_token
+DJANGO_DEBUG=True(for development)/False(for prodaction)
+DJANGO_ALLOWED_HOSTS=hosts
+TZ=Region(for correct time)
+YANDEX_DISK_TOKEN=your token

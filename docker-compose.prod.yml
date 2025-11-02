@@ -1,15 +1,15 @@
 services:
   videosvc:
-    build: .
-    image: videosvc:prod
+    image: alexandrkrasavin/videosvc:latest
     restart: unless-stopped
     ports:
       - "8000:8000"
     env_file: .env
-    command: ["python","-m","gunicorn","-w","3","-b","0.0.0.0:8000","videosvc.wsgi:application"]
+    command: ["python", "-m", "gunicorn", "-w", "3", "-b", "0.0.0.0:8000", "videosvc.wsgi:application"]
     volumes:
-      - /opt/video_service:/app:ro
       - /opt/video_service_data/input:/data/input:ro
       - /opt/video_service_data/output:/data/output
       - /opt/video_service/media:/app/media
+    environment:
+      - PYTHONUNBUFFERED=1
 
