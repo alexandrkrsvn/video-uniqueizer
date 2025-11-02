@@ -25,21 +25,30 @@ BADGE_BEHAVIOR = [
 
 class JobForm(forms.Form):
     job_name = forms.CharField(label="Имя задачи", max_length=100, required=False, help_text="Если не указано, будет присвоен номер.")
-    input_folder = forms.CharField(label="Папка с исходными видео", widget=forms.TextInput(attrs={"size":"80"}))
-    output_folder = forms.CharField(label="Папка для вывода", widget=forms.TextInput(attrs={"size":"80"}))
+    
+    # Выбор источника данных
+    use_yadisk = forms.BooleanField(label="Использовать Яндекс Диск", required=False, initial=False)
+    input_folder = forms.CharField(label="Папка с исходными видео (локальная)", widget=forms.TextInput(attrs={"size":"80"}), required=False)
+    input_yadisk_path = forms.CharField(label="Папка на Яндекс Диске с исходными видео", widget=forms.TextInput(attrs={"size":"80", "readonly":"readonly"}), required=False)
+    output_folder = forms.CharField(label="Папка для вывода (локальная)", widget=forms.TextInput(attrs={"size":"80"}), required=False)
+    output_yadisk_path = forms.CharField(label="Папка на Яндекс Диске для вывода", widget=forms.TextInput(attrs={"size":"80", "readonly":"readonly"}), required=False)
     fmt = forms.ChoiceField(label="Формат", choices=FORMAT_CHOICES, initial="9:16")
     copies = forms.IntegerField(label="Копий на файл", min_value=1, max_value=50, initial=3)
 
     text_enabled = forms.BooleanField(label="Добавить текст", required=False)
     text_content = forms.CharField(label="Текст", required=False, widget=forms.TextInput(attrs={"size":"80"}))
-    text_fontfile = forms.CharField(label="Шрифт (путь)", required=False, widget=forms.TextInput(attrs={"size":"80"}))
+    text_font_from_yadisk = forms.BooleanField(label="Шрифт с Яндекс Диска", required=False)
+    text_fontfile = forms.CharField(label="Шрифт (локальный путь)", required=False, widget=forms.TextInput(attrs={"size":"80"}))
+    text_fontfile_yadisk = forms.CharField(label="Шрифт (Яндекс Диск)", required=False, widget=forms.TextInput(attrs={"size":"80", "readonly":"readonly"}))
     text_auto = forms.BooleanField(label="Авто размер", required=False, initial=True)
     text_level = forms.ChoiceField(label="Уровень", choices=[("Подпись","Подпись"),("Заголовок","Заголовок")], initial="Подпись")
     text_fontsize = forms.IntegerField(label="Размер", required=False, initial=24)
     text_position = forms.ChoiceField(label="Позиция текста", choices=POS_CHOICES, initial="Случайная")
 
     badge_enabled = forms.BooleanField(label="Добавить бейдж", required=False)
-    badge_path = forms.CharField(label="Файл бейджа", required=False, widget=forms.TextInput(attrs={"size":"80"}))
+    badge_from_yadisk = forms.BooleanField(label="Бейдж с Яндекс Диска", required=False)
+    badge_path = forms.CharField(label="Файл бейджа (локальный путь)", required=False, widget=forms.TextInput(attrs={"size":"80"}))
+    badge_path_yadisk = forms.CharField(label="Файл бейджа (Яндекс Диск)", required=False, widget=forms.TextInput(attrs={"size":"80", "readonly":"readonly"}))
     badge_random_scale = forms.BooleanField(label="Случайный масштаб", required=False)
     badge_scale_percent = forms.IntegerField(label="Масштаб %", required=False, initial=30, min_value=10, max_value=80)
     badge_position = forms.ChoiceField(label="Позиция бейджа", choices=POS_CHOICES, initial="Случайная")

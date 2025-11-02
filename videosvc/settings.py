@@ -1,13 +1,18 @@
 from pathlib import Path
 import os
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_dotenv(BASE_DIR / '.env')
 
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'dev-secret-key-do-not-use-in-prod')
 DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '*').split(',')
 
 INSTALLED_APPS = [
+    'django.contrib.contenttypes',
+    'django.contrib.auth',
     'django.contrib.staticfiles',
     'rest_framework',
     'api',
@@ -55,5 +60,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+YANDEX_DISK_TOKEN = os.getenv('YANDEX_DISK_TOKEN', '')
 
 

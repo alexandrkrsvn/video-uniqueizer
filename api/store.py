@@ -1,11 +1,24 @@
 import json
 import re
+import time
+import os
+import threading
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Optional
 from django.conf import settings
 from datetime import datetime
 
-JOBS_ROOT = Path(settings.MEDIA_ROOT) / 'jobs'  # Все задачи здесь 
+JOBS_ROOT = Path(settings.MEDIA_ROOT) / 'jobs'
+
+_job_locks = {}
+_lock_dict_lock = threading.Lock()
+
+def _get_job_lock(job_id: Union[int, str]) -> threading.Lock:
+    job_id_str = str(job_id)
+    with _lock_dict_lock:
+        if job_id_str not in _job_locks:
+            _job_locks[job_id_str] = threading.Lock()
+        return _job_locks[job_id_str] 
 
 def _slugify(name: str) -> str:
     name = re.sub(r'[^\w\s-]', '', name).strip().lower()
@@ -58,29 +71,47 @@ def create_job(payload: Dict) -> Dict:
         'output_folder': payload['output_folder'],
         'params': payload.get('params', {}),
         'created_at': datetime.utcnow().isoformat() + 'Z',
-        'log_path': str(job_log_relpath(job_name)),
+        'log_path': str(job_log_relpath(job_name, payload.get('output_folder'))),
         'message': '',
     }
     write_job(job)
-    job_log_path(job_name).touch()
     return job
 
 def write_job(job: Dict) -> None:
-    p = job_json_path(job['id'])
-    p.parent.mkdir(parents=True, exist_ok=True)
-    data = json.dumps(job, ensure_ascii=False, indent=2)
-    tmp = p.with_suffix('.json.tmp')
-    tmp.write_text(data, encoding='utf-8')
-    tmp.replace(p)
+    job_id = job['id']
+    lock = _get_job_lock(job_id)
+    
+    with lock:
+        p = job_json_path(job_id)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        data = json.dumps(job, ensure_ascii=False, indent=2)
+        tmp = p.with_suffix('.json.tmp')
+        
+        tmp.write_text(data, encoding='utf-8')
+        
+        try:
+            tmp.replace(p)
+        except (PermissionError, OSError) as e:
+            try:
+                p.write_text(data, encoding='utf-8')
+                if tmp.exists():
+                    try:
+                        tmp.unlink()
+                    except Exception:
+                        pass
+            except Exception as final_error:
+                raise Exception(f"Не удалось записать job.json: {final_error}")
 
 def read_job(job_id: Union[int, str]) -> Dict:
     p = job_json_path(job_id)
     return json.loads(p.read_text(encoding='utf-8'))
 
-def job_log_relpath(job_id: Union[int, str]) -> Path:
-    return Path('jobs') / str(job_id) / 'job.log'
+def job_log_relpath(job_id: Union[int, str], output_folder: Optional[str] = None) -> str:
+    if output_folder:
+        return str(Path(output_folder) / str(job_id) / 'logs' / 'job.log')
+    else:
+        return str(Path('jobs') / str(job_id) / 'job.log')
 def list_jobs(limit: int = 20) -> List[Dict]:
-    # Возвращаем список job с сортировкой по дате создания
     _ensure_root()
     jobs = []
     all_job_paths = [p for p in JOBS_ROOT.iterdir() if p.is_dir()]

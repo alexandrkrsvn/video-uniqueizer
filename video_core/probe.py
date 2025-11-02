@@ -14,10 +14,11 @@ def probe_duration(path: Path) -> float:
         return 12.63
 
 def probe_badge(path: Path) -> Tuple[int,int,bool,Optional[float]]:
+    badge_path = str(path).replace('\\','/')
     cmd = [
         "ffprobe","-v","error","-select_streams","v:0",
         "-show_entries","stream=width,height,pix_fmt,duration",
-        "-of","default=noprint_wrappers=1:nokey=1", str(path).replace('\\','/')
+        "-of","default=noprint_wrappers=1:nokey=1", badge_path
     ]
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -28,7 +29,7 @@ def probe_badge(path: Path) -> Tuple[int,int,bool,Optional[float]]:
         has_alpha = "a" in pix_fmt
         dur = float(lines[3]) if len(lines)>3 and lines[3].strip() else None
         return w,h,has_alpha,dur
-    except Exception:
+    except Exception as e:
         return 399,225,False,None
 
 

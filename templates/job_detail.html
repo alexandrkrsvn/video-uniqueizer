@@ -10,7 +10,7 @@
   <p>Вход: <code>{{ job.input_folder }}</code></p>
   <p>Выход: <code>{{ job.output_folder }}</code></p>
   {% if job.log_path %}
-    <p>Лог: <a href="/media/{{ job.log_path }}" target="_blank">скачать</a></p>
+    <p>Лог: <a href="{% url 'download_log' pk=job.id %}" target="_blank">скачать</a></p>
   {% endif %}
   <p><a href="/">Назад</a></p>
   
